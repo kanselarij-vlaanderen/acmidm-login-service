@@ -52,8 +52,8 @@ def imagePrune(DRC_PATH, branch){
 
 def runApp(containerName, tag, httpPort, DRC_PATH, branch){
 
-  withCredentials([string(credentialsId:  'MAILCHIMP_API', variable: 'MAILCHIMP_API')]) {
-    sh "MAILCHIMP_API=$MAILCHIMP_API docker-compose -f docker-compose.${branch}.yml --project-directory=${DRC_PATH}_${branch}  up -d "
+  withCredentials([string(credentialsId:  'MU_APPLICATION_AUTH_CLIENT_SECRET', variable: 'MU_APPLICATION_AUTH_CLIENT_SECRET')]) {
+    sh "MU_APPLICATION_AUTH_CLIENT_SECRET=$MU_APPLICATION_AUTH_CLIENT_SECRET docker-compose -f docker-compose.${branch}.yml --project-directory=${DRC_PATH}_${branch}  up -d "
   }
 
   echo "Application started on port: ${httpPort} (http)"
