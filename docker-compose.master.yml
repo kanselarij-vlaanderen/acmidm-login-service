@@ -1,0 +1,28 @@
+version: '3.4'
+x-logging:
+  &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+services:
+  login:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: login
+    ports:
+      - "8887:80"
+    networks:
+      - proxy
+      - default
+      - backend
+    external_links:
+      - db:database
+
+networks:
+  proxy:
+    external:
+      name: letsencrypt_default
+  backend:
+    external: true
