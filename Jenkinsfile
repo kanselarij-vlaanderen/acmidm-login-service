@@ -45,15 +45,15 @@ node {
 
 def imagePrune(DRC_PATH, branch){
     try {
-        sh "docker-compose -f docker-compose.${branch}.yml --project-directory=${DRC_PATH}_${branch} down -v"
-        sh "docker-compose -f docker-compose.${branch}.yml --project-directory=${DRC_PATH}_${branch} rm -f "
+        sh "docker-compose -f docker-compose.${branch}.yml down -v"
+        sh "docker-compose -f docker-compose.${branch}.yml rm -f "
     } catch(error){}
 }
 
 def runApp(containerName, tag, httpPort, DRC_PATH, branch){
 
   withCredentials([string(credentialsId:  'MU_APPLICATION_AUTH_CLIENT_SECRET', variable: 'MU_APPLICATION_AUTH_CLIENT_SECRET')]) {
-    sh "MU_APPLICATION_AUTH_CLIENT_SECRET=$MU_APPLICATION_AUTH_CLIENT_SECRET docker-compose -f docker-compose.${branch}.yml --project-directory=${DRC_PATH}_${branch}  up -d "
+    sh "MU_APPLICATION_AUTH_CLIENT_SECRET=$MU_APPLICATION_AUTH_CLIENT_SECRET docker-compose -f docker-compose.${branch}.yml up -d "
   }
 
   echo "Application started on port: ${httpPort} (http)"
