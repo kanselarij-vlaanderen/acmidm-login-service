@@ -4,7 +4,7 @@ import { getAccessToken } from './lib/openid';
 import { removeOldSessions, removeCurrentSession,
          ensureUserAndAccount, insertNewSessionForAccount,
          selectAccountBySession, selectCurrentSession,
-         selectBestuurseenheidByNumber } from './lib/session';
+         selectUserGroup } from './lib/session';
 import request from 'request';
 
 const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM || 'abb_loketLB_rol_3d';
@@ -71,17 +71,24 @@ app.post('/sessions', async function(req, res, next) {
     if (process.env['LOG_SINK_URL'])
       request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true});
 
-    const { groupUri, groupId } = await selectBestuurseenheidByNumber(claims);
+    const { accountUri, accountId } = await ensureUserAndAccount(claims);
+
+    let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim);
+
     if (!groupUri || !groupId) {
-      console.log(`User is not allowed to login. No bestuurseenheid found for roles ${JSON.stringify(claims[roleClaim])}`);
-      return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
+      groupUri = "http://data.kanselarij.vlaanderen.be/roles/no-access";
+      groupId = "351024cf-bd48-4938-a14c-8dd20571f7df";
+      groupName = "no-access";
     }
-
-    const { accountUri, accountId } = await ensureUserAndAccount(claims, groupId);
+    
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
-
+    roles.push(groupName);
     const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
 
+    let groupData = null;
+    if(groupName != "no-access"){
+      groupData = { type: 'bestuurseenheden', id: groupId, name: groupName }
+    }
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
       links: {
         self: '/sessions/current'
@@ -100,7 +107,7 @@ app.post('/sessions', async function(req, res, next) {
         },
         group: {
           links: { related: `/bestuurseenheden/${groupId}` },
-          data: { type: 'bestuurseenheden', id: groupId }
+          data: groupData
         }
       }
     });
