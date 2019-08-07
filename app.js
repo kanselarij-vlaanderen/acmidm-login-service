@@ -80,7 +80,7 @@ app.post('/sessions', async function(req, res, next) {
       groupId = "351024cf-bd48-4938-a14c-8dd20571f7df";
       groupName = "no-access";
     }
-    
+
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
     roles.push(groupName);
     const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
@@ -157,7 +157,7 @@ app.get('/sessions/current', async function(req, res, next) {
     if (!accountUri)
       return error(res, 'Invalid session');
 
-    const { sessionId, groupId, roles } = await selectCurrentSession(accountUri);
+    const { sessionId, groupId, groupName, roles } = await selectCurrentSession(accountUri);
 
     return res.status(200).send({
       links: {
@@ -177,7 +177,7 @@ app.get('/sessions/current', async function(req, res, next) {
         },
         group: {
           links: { related: `/bestuurseenheden/${groupId}` },
-          data: { type: 'bestuurseenheden', id: groupId }
+          data: { type: 'bestuurseenheden', id: groupId, name: groupName }
         }
       }
     });
