@@ -170,6 +170,7 @@ app.get('/sessions/current', async function(req, res, next) {
           roles: roles
         }
       },
+      provider: "acmidm-oauth2",
       relationships: {
         account: {
           links: { related: `/accounts/${accountId}` },
