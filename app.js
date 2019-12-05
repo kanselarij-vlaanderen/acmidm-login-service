@@ -7,7 +7,7 @@ import { removeOldSessions, removeCurrentSession,
   selectUserGroup } from './lib/session';
 import request from 'request';
 
-const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM || 'abb_loketLB_rol_3d';
+const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
 
 /**
  * Configuration validation on startup
@@ -18,6 +18,11 @@ const requiredEnvironmentVariables = [
   'MU_APPLICATION_AUTH_CLIENT_SECRET',
   'MU_APPLICATION_AUTH_REDIRECT_URI'
 ];
+if (allowNoRoleClaim) {
+  requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_DEFAULT_GROUP_URI');
+} else {
+  requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_ROLE_CLAIM');
+}
 requiredEnvironmentVariables.forEach(key => {
   if (!process.env[key]) {
     console.log(`Environment variable ${key} must be configured`);
@@ -25,6 +30,7 @@ requiredEnvironmentVariables.forEach(key => {
   }
 });
 
+const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM;
 
 /**
  * Log the user in by creating a new session, i.e. attaching the user's account to a session.
@@ -79,19 +85,16 @@ app.post('/sessions', async function (req, res, next) {
     let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim);
 
     if (!groupUri || !groupId) {
-      groupUri = 'http://data.kanselarij.vlaanderen.be/roles/no-access';
-      groupId = '351024cf-bd48-4938-a14c-8dd20571f7df';
-      groupName = 'no-access';
+      console.log(`User is not allowed to login. No user group found`);
+      return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
 
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
     roles.push(groupName);
     const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
 
-    let groupData = null;
-    if (groupName !== 'no-access') {
-      groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
-    }
+    const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
+
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
       links: {
         self: '/sessions/current'
