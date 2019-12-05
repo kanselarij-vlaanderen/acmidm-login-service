@@ -26,7 +26,6 @@ The following enviroment variables can be configured:
 * `MU_APPLICATION_AUTH_CLIENT_ID` [string]: Client id of the application in ACM/IDM
 * `MU_APPLICATION_AUTH_CLIENT_SECRET` [string]: Client secret of the application in ACM/IDM
 * `MU_APPLICATION_AUTH_REDIRECT_URI` [string]: Redirect URI of the application configured in ACM/IDM
-* `MU_APPLICATION_AUTH_SCOPE` [string]: Space-separated string of scopes to grant access for (default `openid rrn vo profile abb_loketLB`)
 * `MU_APPLICATION_AUTH_ROLE_CLAIM` [string]: Key of the claim that contains the user's roles (default `abb_loketLB_rol_3d`)
 * `MU_APPLICATION_AUTH_USERID_CLAIM` [string]: Key of the claim that contains the user's ientifier (default `rrn`)
 * `MU_APPLICATION_AUTH_ACCOUNTID_CLAIM` [string]: Key of the claim that contains the account's identifier (default `vo_id`)
