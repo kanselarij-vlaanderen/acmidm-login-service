@@ -1,10 +1,10 @@
-import { app, sparql, uuid } from 'mu';
+import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import { removeOldSessions, removeCurrentSession,
-         ensureUserAndAccount, insertNewSessionForAccount,
-         selectAccountBySession, selectCurrentSession,
-         selectUserGroup } from './lib/session';
+  ensureUserAndAccount, insertNewSessionForAccount,
+  selectAccountBySession, selectCurrentSession,
+  selectUserGroup } from './lib/session';
 import request from 'request';
 
 const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM || 'abb_loketLB_rol_3d';
@@ -42,20 +42,22 @@ requiredEnvironmentVariables.forEach(key => {
  * @return [401] On login failure (unable to retrieve a valid access token)
  * @return [403] If no bestuurseenheid can be linked to the session
 */
-app.post('/sessions', async function(req, res, next) {
+app.post('/sessions', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
-  if (!sessionUri)
+  if (!sessionUri) {
     return error(res, 'Session header is missing');
+  }
 
   const authorizationCode = req.body['authorizationCode'];
-  if (!authorizationCode)
+  if (!authorizationCode) {
     return error(res, 'Authorization code is missing');
+  }
 
   try {
     let tokenSet;
     try {
       tokenSet = await getAccessToken(authorizationCode);
-    } catch(e) {
+    } catch (e) {
       console.log(`Failed to retrieve access token for authorization code: ${e.message || e}`);
       return res.status(401).end();
     }
@@ -64,21 +66,22 @@ app.post('/sessions', async function(req, res, next) {
 
     const claims = tokenSet.claims;
 
-    if (process.env['DEBUG_LOG_TOKENSETS']){
+    if (process.env['DEBUG_LOG_TOKENSETS']) {
       console.log(`Received tokenSet ${JSON.stringify(tokenSet)} including claims ${JSON.stringify(claims)}`);
     }
 
-    if (process.env['LOG_SINK_URL'])
-      request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true});
+    if (process.env['LOG_SINK_URL']) {
+      request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true });
+    }
 
     const { accountUri, accountId } = await ensureUserAndAccount(claims);
 
     let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim);
 
     if (!groupUri || !groupId) {
-      groupUri = "http://data.kanselarij.vlaanderen.be/roles/no-access";
-      groupId = "351024cf-bd48-4938-a14c-8dd20571f7df";
-      groupName = "no-access";
+      groupUri = 'http://data.kanselarij.vlaanderen.be/roles/no-access';
+      groupId = '351024cf-bd48-4938-a14c-8dd20571f7df';
+      groupName = 'no-access';
     }
 
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
@@ -86,8 +89,8 @@ app.post('/sessions', async function(req, res, next) {
     const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
 
     let groupData = null;
-    if(groupName != "no-access"){
-      groupData = { type: 'bestuurseenheden', id: groupId, name: groupName }
+    if (groupName !== 'no-access') {
+      groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
     }
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
       links: {
@@ -111,11 +114,10 @@ app.post('/sessions', async function(req, res, next) {
         }
       }
     });
-  } catch(e) {
+  } catch (e) {
     return next(new Error(e.message));
   }
 });
-
 
 /**
  * Log out from the current session, i.e. detaching the session from the user's account.
@@ -123,20 +125,21 @@ app.post('/sessions', async function(req, res, next) {
  * @return [204] On successful logout
  * @return [400] If the session header is missing or invalid
 */
-app.delete('/sessions/current', async function(req, res, next) {
+app.delete('/sessions/current', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
-  if (!sessionUri)
+  if (!sessionUri) {
     return error(res, 'Session header is missing');
-
+  }
   try {
     const { accountUri } = await selectAccountBySession(sessionUri);
-    if (!accountUri)
+    if (!accountUri) {
       return error(res, 'Invalid session');
+    }
 
     await removeCurrentSession(sessionUri);
 
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(204).end();
-  } catch(e) {
+  } catch (e) {
     return next(new Error(e.message));
   }
 });
@@ -147,15 +150,17 @@ app.delete('/sessions/current', async function(req, res, next) {
  * @return [200] The current session
  * @return [400] If the session header is missing or invalid
 */
-app.get('/sessions/current', async function(req, res, next) {
+app.get('/sessions/current', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
-  if (!sessionUri)
+  if (!sessionUri) {
     return next(new Error('Session header is missing'));
+  }
 
   try {
     const { accountUri, accountId } = await selectAccountBySession(sessionUri);
-    if (!accountUri)
+    if (!accountUri) {
       return error(res, 'Invalid session');
+    }
 
     const { sessionId, groupId, groupName, roles } = await selectCurrentSession(accountUri);
 
@@ -170,7 +175,7 @@ app.get('/sessions/current', async function(req, res, next) {
           roles: roles
         }
       },
-      provider: "acmidm-oauth2",
+      provider: 'acmidm-oauth2',
       relationships: {
         account: {
           links: { related: `/accounts/${accountId}` },
@@ -182,19 +187,18 @@ app.get('/sessions/current', async function(req, res, next) {
         }
       }
     });
-  } catch(e) {
+  } catch (e) {
     return next(new Error(e.message));
   }
 });
 
-
 /**
  * Error handler translating thrown Errors to 500 HTTP responses
 */
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   console.log(`Error: ${err.message}`);
   res.status(500);
   res.json({
-    errors: [ {title: err.message} ]
+    errors: [ { title: err.message } ]
   });
 });
