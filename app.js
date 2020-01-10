@@ -1,6 +1,6 @@
 import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
-import { getAccessToken } from './lib/openid';
+import { getAccessTokenWithRetry } from './lib/openid';
 import { removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
   selectAccountBySession, selectCurrentSession,
