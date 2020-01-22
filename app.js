@@ -16,11 +16,10 @@ const requiredEnvironmentVariables = [
   'MU_APPLICATION_AUTH_DISCOVERY_URL',
   'MU_APPLICATION_AUTH_CLIENT_ID',
   'MU_APPLICATION_AUTH_CLIENT_SECRET',
-  'MU_APPLICATION_AUTH_REDIRECT_URI'
+  'MU_APPLICATION_AUTH_REDIRECT_URI',
+  'MU_APPLICATION_AUTH_DEFAULT_GROUP_URI'
 ];
-if (allowNoRoleClaim) {
-  requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_DEFAULT_GROUP_URI');
-} else {
+if (!allowNoRoleClaim) {
   requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_ROLE_CLAIM');
 }
 requiredEnvironmentVariables.forEach(key => {
