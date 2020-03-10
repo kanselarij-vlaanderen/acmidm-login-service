@@ -1,10 +1,12 @@
 import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessTokenWithRetry } from './lib/openid';
-import { removeOldSessions, removeCurrentSession,
+import {
+  removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
-  selectAccountBySession, selectCurrentSession,
-  selectUserGroup } from './lib/session';
+  selectAccountBySession, selectCurrentSession
+} from './lib/session';
+import { selectUserGroup } from './user';
 import request from 'request';
 
 const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
