@@ -6,7 +6,7 @@ import {
   ensureUserAndAccount, insertNewSessionForAccount,
   selectAccountBySession, selectCurrentSession
 } from './lib/session';
-import { selectUserGroup } from './user';
+import { selectUserGroup } from './lib/user';
 import request from 'request';
 
 const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
