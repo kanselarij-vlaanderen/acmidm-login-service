@@ -1,10 +1,12 @@
 import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessTokenWithRetry } from './lib/openid';
-import { removeOldSessions, removeCurrentSession,
+import {
+  removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
-  selectAccountBySession, selectCurrentSession,
-  selectUserGroup } from './lib/session';
+  selectAccountBySession, selectCurrentSession
+} from './lib/session';
+import { selectUserGroup } from './lib/user';
 import request from 'request';
 
 const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
@@ -16,11 +18,10 @@ const requiredEnvironmentVariables = [
   'MU_APPLICATION_AUTH_DISCOVERY_URL',
   'MU_APPLICATION_AUTH_CLIENT_ID',
   'MU_APPLICATION_AUTH_CLIENT_SECRET',
-  'MU_APPLICATION_AUTH_REDIRECT_URI'
+  'MU_APPLICATION_AUTH_REDIRECT_URI',
+  'MU_APPLICATION_AUTH_DEFAULT_GROUP_URI'
 ];
-if (allowNoRoleClaim) {
-  requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_DEFAULT_GROUP_URI');
-} else {
+if (!allowNoRoleClaim) {
   requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_ROLE_CLAIM');
 }
 requiredEnvironmentVariables.forEach(key => {
