@@ -6,7 +6,7 @@ import {
   ensureUserAndAccount, insertNewSessionForAccount,
   selectAccountBySession, selectCurrentSession
 } from './lib/session';
-import { selectUserGroup } from './lib/user';
+import { selectUserGroup, USER_GRAPH_URI } from './lib/user';
 import request from 'request';
 
 const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
@@ -81,9 +81,8 @@ app.post('/sessions', async function (req, res, next) {
       request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true });
     }
 
-    const { accountUri, accountId } = await ensureUserAndAccount(claims);
-
-    let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim);
+    const { accountUri, accountId } = await ensureUserAndAccount(claims, USER_GRAPH_URI);
+    let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim, USER_GRAPH_URI);
 
     if (!groupUri || !groupId) {
       console.log(`User is not allowed to login. No user group found`);
@@ -135,7 +134,7 @@ app.delete('/sessions/current', async function (req, res, next) {
     return error(res, 'Session header is missing');
   }
   try {
-    const { accountUri } = await selectAccountBySession(sessionUri);
+    const { accountUri } = await selectAccountBySession(sessionUri, USER_GRAPH_URI);
     if (!accountUri) {
       return error(res, 'Invalid session');
     }
@@ -161,7 +160,7 @@ app.get('/sessions/current', async function (req, res, next) {
   }
 
   try {
-    const { accountUri, accountId } = await selectAccountBySession(sessionUri);
+    const { accountUri, accountId } = await selectAccountBySession(sessionUri, USER_GRAPH_URI);
     if (!accountUri) {
       return error(res, 'Invalid session');
     }

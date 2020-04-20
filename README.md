@@ -33,6 +33,8 @@ The following enviroment variables can be configured:
 * `MU_APPLICATION_AUTH_DEFAULT_GROUP_URI` [string]: Default group a user gets assigned to when registering without the expected role claim.
 * `MU_APPLICATION_RESOURCE_BASE_URI` [string]: Base URI to use for resources created by this service. The URI must end with a trailing slash! (default: `http://data.lblod.info/`)
 * `MU_APPLICATION_GRAPH` [string]: URI of the graph in which Bestuurseenheden are stored (default `http://mu.semte.ch/graphs/public`)
+* `ORG_GRAPH_URI` [string]: URI of the graph in which organizations are stored. (default `'http://mu.semte.ch/graphs/public'`)
+* `USER_GRAPH_URI` [string]: URI of the graph in which users and their accounts are stored. (default `MU_APPLICATION_GRAPH`)
 * `DEBUG_LOG_TOKENSETS`: When set, received tokenSet information is logged to the console.
 * `LOG_SINK_URL`: When set, log tokenSet information to that configured sink. 
 
