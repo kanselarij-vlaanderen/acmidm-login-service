@@ -4,7 +4,8 @@ import { getAccessTokenWithRetry } from './lib/openid';
 import {
   removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
-  selectAccountBySession, selectCurrentSession
+  selectAccountBySession, selectCurrentSession,
+  updateMetadataForAccount
 } from './lib/session';
 import { selectUserGroup, USER_GRAPH_URI } from './lib/user';
 import request from 'request';
@@ -92,6 +93,8 @@ app.post('/sessions', async function (req, res, next) {
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
     roles.push(groupName);
     const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
+
+    await updateMetadataForAccount(accountUri, USER_GRAPH_URI);
 
     const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
 
