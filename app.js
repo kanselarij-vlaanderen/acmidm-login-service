@@ -1,6 +1,6 @@
 import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
-import { getAccessTokenWithRetry } from './lib/openid';
+import { getIssuer, getAccessTokenWithRetry } from './lib/openid';
 import {
   removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
@@ -61,9 +61,11 @@ app.post('/sessions', async function (req, res, next) {
   }
 
   try {
+    let issuer;
     let tokenSet;
     try {
-      tokenSet = await getAccessTokenWithRetry(authorizationCode);
+      issuer = await getIssuer();
+      tokenSet = await getAccessTokenWithRetry(issuer, authorizationCode);
     } catch (e) {
       console.log(`Failed to retrieve access token for authorization code: ${e.message || e}`);
       return res.status(401).end();
@@ -91,7 +93,12 @@ app.post('/sessions', async function (req, res, next) {
 
     const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
     roles.push(groupName);
-    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
+    const oauthTokenValue = tokenSet.access_token;
+    const oauthTokenExpirytime = new Date(0);
+    oauthTokenExpirytime.setUTCSeconds(tokenSet.expires_at);
+    const oauthTokenEndpoint = issuer.metadata.token_endpoint;
+    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles,
+      oauthTokenValue, oauthTokenExpirytime, oauthTokenEndpoint);
 
     const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
 
