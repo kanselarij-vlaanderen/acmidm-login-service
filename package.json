@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "description": "Microservice to login using ACM/IDM with OpenId",
   "dependencies": {
-    "openid-client": "^2.5.0"
+    "openid-client": "^4.7.5"
   },
   "devDependencies": {},
   "scripts": {

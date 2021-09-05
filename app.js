@@ -1,6 +1,6 @@
 import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
-import { getAccessTokenWithRetry } from './lib/openid';
+import { getAccessToken } from './lib/openid';
 import {
   removeOldSessions, removeCurrentSession,
   ensureUserAndAccount, insertNewSessionForAccount,
@@ -63,7 +63,7 @@ app.post('/sessions', async function (req, res, next) {
   try {
     let tokenSet;
     try {
-      tokenSet = await getAccessTokenWithRetry(authorizationCode);
+      tokenSet = await getAccessToken(authorizationCode);
     } catch (e) {
       console.log(`Failed to retrieve access token for authorization code: ${e.message || e}`);
       return res.status(401).end();
@@ -71,7 +71,7 @@ app.post('/sessions', async function (req, res, next) {
 
     await removeOldSessions(sessionUri);
 
-    const claims = tokenSet.claims;
+    const claims = tokenSet.claims();
 
     if (process.env['DEBUG_LOG_TOKENSETS']) {
       console.log(`Received tokenSet ${JSON.stringify(tokenSet)} including claims ${JSON.stringify(claims)}`);
