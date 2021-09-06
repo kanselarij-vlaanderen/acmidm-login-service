@@ -1,17 +1,24 @@
 # ACM/IDM login microservice
 Microservice running on [mu.semte.ch](http://mu.semte.ch) providing the necessary endpoints to login/logout a user using ACM/IDM as OpenId provider. This backend service works together with `@lblod/ember-acmidm-login` in the frontend.
 
-## Integrate login service in a mu.semte.ch project
+## Tutorials
+### Add the login service to a stack
 Add the following snippet to your `docker-compose.yml` to include the login service in your project.
 
-```
-login:
-  image: lblod/acmidm-login-service
+```yaml
+services:
+  login:
+    image: kanselarij/acmidm-login-service:1.3.0
+    environment:
+      MU_APPLICATION_AUTH_DISCOVERY_URL: "https://authenticatie-ti.vlaanderen.be/op"
+      MU_APPLICATION_AUTH_CLIENT_ID: "my-client-id"
+      MU_APPLICATION_AUTH_REDIRECT_URI: "https://VLIVIA-dev.vlaanderen.be/authorization/callback"
+      MU_APPLICATION_AUTH_CLIENT_SECRET: "THIS IS OUR SECRET"
 ```
 
 Add rules to the `dispatcher.ex` to dispatch requests to the login service. E.g. 
 
-```
+```elixir
   match "/sessions/*path" do
     Proxy.forward conn, path, "http://login/sessions/"
   end
@@ -20,12 +27,17 @@ The host `login` in the forward URL reflects the name of the login service in th
 
 More information how to setup a mu.semte.ch project can be found in [mu-project](https://github.com/mu-semtech/mu-project).
 
-## Configuration
-The following enviroment variables can be configured:
+## Reference
+### Configuration
+The following environment variables are required:
 * `MU_APPLICATION_AUTH_DISCOVERY_URL` [string]: OpenId discovery URL for authentication
 * `MU_APPLICATION_AUTH_CLIENT_ID` [string]: Client id of the application in ACM/IDM
 * `MU_APPLICATION_AUTH_CLIENT_SECRET` [string]: Client secret of the application in ACM/IDM
 * `MU_APPLICATION_AUTH_REDIRECT_URI` [string]: Redirect URI of the application configured in ACM/IDM
+
+The following enviroment variables can optionally be configured:
+* `REQUEST_TIMEOUT` [int]: Timeout in ms of OpenID HTTP requests (default `25000`)
+* `REQUEST_RETRIES` [int]: Number of times to retry OpenID HTTP requests (default `2`)
 * `MU_APPLICATION_AUTH_ROLE_CLAIM` [string]: Key of the claim that contains the user's roles (default `abb_loketLB_rol_3d`)
 * `MU_APPLICATION_AUTH_USERID_CLAIM` [string]: Key of the claim that contains the user's ientifier (default `rrn`)
 * `MU_APPLICATION_AUTH_ACCOUNTID_CLAIM` [string]: Key of the claim that contains the account's identifier (default `vo_id`)
@@ -38,7 +50,7 @@ The following enviroment variables can be configured:
 * `DEBUG_LOG_TOKENSETS`: When set, received tokenSet information is logged to the console.
 * `LOG_SINK_URL`: When set, log tokenSet information to that configured sink. 
 
-## Available requests
+### API
 
 #### POST /sessions
 Log the user in by creating a new session, i.e. attaching the user's account to a session.
