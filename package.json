@@ -3,7 +3,8 @@
   "version": "1.0.1",
   "description": "Microservice to login using ACM/IDM with OpenId",
   "dependencies": {
-    "openid-client": "^2.5.0"
+    "@lblod/mu-auth-sudo": "^0.2.0",
+    "openid-client": "^4.7.5"
   },
   "devDependencies": {},
   "scripts": {
