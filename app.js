@@ -89,9 +89,7 @@ app.post('/sessions', async function (req, res, next) {
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
 
-    const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
-    roles.push(groupName);
-    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
+    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri);
 
     const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
 
@@ -102,9 +100,7 @@ app.post('/sessions', async function (req, res, next) {
       data: {
         type: 'sessions',
         id: sessionId,
-        attributes: {
-          roles: roles
-        }
+        attributes: {}
       },
       relationships: {
         account: {

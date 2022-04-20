@@ -90,11 +90,7 @@ On successful login with the newly created session in the response body:
   "data": {
     "type": "sessions",
     "id": "b178ba66-206e-4551-b41e-4a46983912c0",
-    "attributes": {
-        "roles": [
-            "LoketLB-mandaatGebruiker"
-        ]
-    }
+    "attributes": {}
   },
   "relationships": {
     "account": {
