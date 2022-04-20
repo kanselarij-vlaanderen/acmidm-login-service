@@ -161,7 +161,7 @@ app.get('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
-    const { sessionId, groupId, groupName, roles } = await selectCurrentSession(accountUri);
+    const { sessionId, groupId, groupName } = await selectCurrentSession(accountUri);
 
     return res.status(200).send({
       links: {
@@ -170,9 +170,7 @@ app.get('/sessions/current', async function (req, res, next) {
       data: {
         type: 'sessions',
         id: sessionId,
-        attributes: {
-          roles: roles
-        }
+        attributes: {}
       },
       provider: 'acmidm-oauth2',
       relationships: {
