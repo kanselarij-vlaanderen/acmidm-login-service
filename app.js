@@ -2,7 +2,7 @@ import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import {
-  removeOldSessions, removeCurrentSession,
+  removeSession,
   ensureUserAndAccount, insertNewSessionForAccount,
   selectAccountBySession, selectCurrentSession
 } from './lib/session';
@@ -69,7 +69,7 @@ app.post('/sessions', async function (req, res, next) {
       return res.status(401).end();
     }
 
-    await removeOldSessions(sessionUri);
+    await removeSession(sessionUri);
 
     const claims = tokenSet.claims();
 
@@ -135,7 +135,7 @@ app.delete('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
-    await removeCurrentSession(sessionUri);
+    await removeSession(sessionUri);
 
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(204).end();
   } catch (e) {
