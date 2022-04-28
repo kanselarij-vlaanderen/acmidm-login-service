@@ -2,7 +2,7 @@ import { app } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import {
-  removeOldSessions, removeCurrentSession,
+  removeSession,
   ensureUserAndAccount, insertNewSessionForAccount,
   selectAccountBySession, selectCurrentSession
 } from './lib/session';
@@ -69,7 +69,7 @@ app.post('/sessions', async function (req, res, next) {
       return res.status(401).end();
     }
 
-    await removeOldSessions(sessionUri);
+    await removeSession(sessionUri);
 
     const claims = tokenSet.claims();
 
@@ -89,9 +89,7 @@ app.post('/sessions', async function (req, res, next) {
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
 
-    const roles = (claims[roleClaim] || []).map(r => r.split(':')[0]);
-    roles.push(groupName);
-    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri, roles);
+    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri);
 
     const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
 
@@ -102,9 +100,7 @@ app.post('/sessions', async function (req, res, next) {
       data: {
         type: 'sessions',
         id: sessionId,
-        attributes: {
-          roles: roles
-        }
+        attributes: {}
       },
       relationships: {
         account: {
@@ -139,7 +135,7 @@ app.delete('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
-    await removeCurrentSession(sessionUri);
+    await removeSession(sessionUri);
 
     return res.header('mu-auth-allowed-groups', 'CLEAR').status(204).end();
   } catch (e) {
@@ -165,7 +161,7 @@ app.get('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
-    const { sessionId, groupId, groupName, roles } = await selectCurrentSession(accountUri);
+    const { sessionId, groupId, groupName } = await selectCurrentSession(accountUri);
 
     return res.status(200).send({
       links: {
@@ -174,9 +170,7 @@ app.get('/sessions/current', async function (req, res, next) {
       data: {
         type: 'sessions',
         id: sessionId,
-        attributes: {
-          roles: roles
-        }
+        attributes: {}
       },
       provider: 'acmidm-oauth2',
       relationships: {
