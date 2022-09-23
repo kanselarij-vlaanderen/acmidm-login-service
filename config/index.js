@@ -1,8 +1,8 @@
 const RESOURCE_BASE_URI  = 'http://themis.vlaanderen.be';
 
+const PUBLIC_GRAPH = 'http://mu.semte.ch/graphs/public';
 const USERS_GRAPH = 'http://mu.semte.ch/graphs/system/users';
 const SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions';
-const PUBLIC_GRAPH = 'http://mu.semte.ch/graphs/public';
 
 const ACCOUNT_SERVICE_HOMEPAGE = 'https://github.com/kanselarij-vlaanderen/acmidm-login-service';
 
