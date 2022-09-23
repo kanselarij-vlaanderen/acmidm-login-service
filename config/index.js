@@ -8,7 +8,7 @@ const ACCOUNT_SERVICE_HOMEPAGE = 'https://github.com/kanselarij-vlaanderen/acmid
 
 const AUTH_USERID_CLAIM = process.env.MU_APPLICATION_AUTH_USERID_CLAIM || 'vo_id';
 const AUTH_ACCOUNTID_CLAIM = process.env.MU_APPLICATION_AUTH_ACCOUNTID_CLAIM || 'sub';
-const AUTH_ROLE_CLAIM = 'dkb_kaleidos_rol_3d';
+const AUTH_ROLE_CLAIM = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM || 'dkb_kaleidos_rol_3d';
 const AUTH_ORG_CODE_CLAIM = 'vo_orgcode';
 const AUTH_ORG_NAME_CLAIM = 'vo_orgnaam';
 const AUTH_FIRST_NAME_CLAIM = 'given_name';
