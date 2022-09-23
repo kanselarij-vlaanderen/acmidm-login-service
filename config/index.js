@@ -1,0 +1,40 @@
+const RESOURCE_BASE_URI  = 'http://themis.vlaanderen.be';
+
+const USERS_GRAPH = 'http://mu.semte.ch/graphs/system/users';
+const SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions';
+const PUBLIC_GRAPH = 'http://mu.semte.ch/graphs/public';
+
+const ACCOUNT_SERVICE_HOMEPAGE = 'https://github.com/kanselarij-vlaanderen/acmidm-login-service';
+
+const AUTH_USERID_CLAIM = process.env.MU_APPLICATION_AUTH_USERID_CLAIM || 'vo_id';
+const AUTH_ACCOUNTID_CLAIM = process.env.MU_APPLICATION_AUTH_ACCOUNTID_CLAIM || 'sub';
+const AUTH_ROLE_CLAIM = 'dkb_kaleidos_rol_3d';
+const AUTH_ORG_CODE_CLAIM = 'vo_orgcode';
+const AUTH_ORG_NAME_CLAIM = 'vo_orgnaam';
+const AUTH_FIRST_NAME_CLAIM = 'given_name';
+const AUTH_FAMILY_NAME_CLAIM = 'family_name';
+
+// Parse the role name from a claim coming from ACM/IDM
+// E.g. KaleidosGebruiker-Kaleidos_Overheidsorganisatie:OVO000617
+//      => Kaleidos_Overheidsorganisatie
+const ROLE_CLAIM_REGEX = /^KaleidosGebruiker-(Kaleidos_[\d\w]*):/;
+function parseRoleFromClaim(claim) {
+  const match = claim?.match(ROLE_CLAIM_REGEX);
+  return match ? match[1] : null;
+}
+
+export {
+  RESOURCE_BASE_URI,
+  USERS_GRAPH,
+  SESSIONS_GRAPH,
+  PUBLIC_GRAPH,
+  ACCOUNT_SERVICE_HOMEPAGE,
+  AUTH_USERID_CLAIM,
+  AUTH_ACCOUNTID_CLAIM,
+  AUTH_ROLE_CLAIM,
+  AUTH_ORG_CODE_CLAIM,
+  AUTH_ORG_NAME_CLAIM,
+  AUTH_FIRST_NAME_CLAIM,
+  AUTH_FAMILY_NAME_CLAIM,
+  parseRoleFromClaim
+}
