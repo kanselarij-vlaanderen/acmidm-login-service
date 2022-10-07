@@ -1,4 +1,5 @@
 # ACM/IDM login microservice
+
 Microservice running on [mu.semte.ch](http://mu.semte.ch) providing the necessary endpoints to login/logout a user using ACM/IDM as OpenId provider. This backend service works together with `@lblod/ember-acmidm-login` in the frontend.
 
 ## Tutorials
@@ -38,17 +39,11 @@ The following environment variables are required:
 The following enviroment variables can optionally be configured:
 * `REQUEST_TIMEOUT` [int]: Timeout in ms of OpenID HTTP requests (default `25000`)
 * `REQUEST_RETRIES` [int]: Number of times to retry OpenID HTTP requests (default `2`)
-* `MU_APPLICATION_AUTH_ROLE_CLAIM` [string]: Key of the claim that contains the user's roles (default `abb_loketLB_rol_3d`)
-* `MU_APPLICATION_AUTH_USERID_CLAIM` [string]: Key of the claim that contains the user's ientifier (default `rrn`)
-* `MU_APPLICATION_AUTH_ACCOUNTID_CLAIM` [string]: Key of the claim that contains the account's identifier (default `vo_id`)
-* `MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM` [boolean]: Allow registering a user even when the expected `MU_APPLICATION_AUTH_ROLE_CLAIM` doesn't exist in the tokenset. The `MU_APPLICATION_AUTH_DEFAULT_GROUP_URI` will be used to assign the user to a default group. (default `false`)
-* `MU_APPLICATION_AUTH_DEFAULT_GROUP_URI` [string]: Default group a user gets assigned to when registering without the expected role claim.
-* `MU_APPLICATION_RESOURCE_BASE_URI` [string]: Base URI to use for resources created by this service. The URI must end with a trailing slash! (default: `http://data.lblod.info/`)
-* `MU_APPLICATION_GRAPH` [string]: URI of the graph in which Bestuurseenheden are stored (default `http://mu.semte.ch/graphs/public`)
-* `ORG_GRAPH_URI` [string]: URI of the graph in which organizations are stored. (default `'http://mu.semte.ch/graphs/public'`)
-* `USER_GRAPH_URI` [string]: URI of the graph in which users and their accounts are stored. (default `MU_APPLICATION_GRAPH`)
+* `MU_APPLICATION_AUTH_ROLE_CLAIM` [string]: Key of the claim that contains the user's roles (default `dkb_kaleidos_rol_3d`)
+* `MU_APPLICATION_AUTH_USERID_CLAIM` [string]: Key of the claim that contains the user's ientifier (default `vo_id`)
+* `MU_APPLICATION_AUTH_ACCOUNTID_CLAIM` [string]: Key of the claim that contains the account's identifier (default `sub`)
 * `DEBUG_LOG_TOKENSETS`: When set, received tokenSet information is logged to the console.
-* `LOG_SINK_URL`: When set, log tokenSet information to that configured sink. 
+* `LOG_SINK_URL`: When set, log tokenSet information to that configured sink.
 
 ### API
 
@@ -57,21 +52,7 @@ Log the user in by creating a new session, i.e. attaching the user's account to 
 
 Before creating a new session, the given authorization code gets exchanged for an access token with an OpenID Provider (ACM/IDM) using the configured discovery URL. The returned JWT access token is decoded to retrieve information to attach to the user, account and the session. If the OpenID Provider returns a valid access token, a new user and account are created if they don't exist yet and a the account is attached to the session. 
 
-The service handless the following claims included in the access token. Only the claims configured through the environment variables and the claim `vo_orgcode` are required. All other claims are optional.
-* `env.MU_APPLICATION_AUTH_USERID_CLAIM`<sup>1</sup>
-* `given_name`<sup>1</sup>
-* `family_name`<sup>1</sup>
-* `env.MU_APPLICATION_AUTH_ACCOUNTID_CLAIM`<sup>2</sup>
-* `vo_doelgroepcode`<sup>2</sup>
-* `vo_doelgroepnaam`<sup>2</sup>
-* `vo_orgcode`<sup>3</sup>
-* `env.MU_APPLICATION_AUTH_ROLE_CLAIM`<sup>3</sup>
-
-<sup>1</sup>Information is attached to the user object in the store
-
-<sup>2</sup> Information is attached to the account object in the store
-
-<sup>3</sup> Information is attached to the session in the store
+The data model and mapping of ACM/IDM claims is documented [here](https://github.com/kanselarij-vlaanderen/kaleidos-documentation/blob/master/data-model/authentication.md)
 
 ##### Request body
 ```javascript
@@ -89,26 +70,25 @@ On successful login with the newly created session in the response body:
   },
   "data": {
     "type": "sessions",
-    "id": "b178ba66-206e-4551-b41e-4a46983912c0",
-    "attributes": {}
-  },
-  "relationships": {
-    "account": {
-      "links": {
-        "related": "/accounts/f6419af0-c90f-465f-9333-e993c43e6cf2"
+    "id": "b178ba66-206e-4551-b41e-4a46983912c0"
+    "relationships": {
+      "account": {
+        "links": {
+          "related": "/accounts/8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        },
+        "data": {
+          "type": "accounts",
+          "id": "8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        }
       },
-      "data": {
-        "type": "accounts",
-        "id": "f6419af0-c90f-465f-9333-e993c43e6cf2"
-      }
-    },
-    "group": {
-      "links": {
-        "related": "/bestuurseenheden/f6419af0-c60f-465f-9333-e993c43e6ch5"
-      },
-      "data": {
-        "type": "bestuurseenheden",
-        "id": "f6419af0-c60f-465f-9333-e993c43e6ch5"
+      "membership": {
+        "links": {
+          "related": "/memberships/3ba43eea-28f4-4386-bc26-2476baeb8425"
+        },
+        "data": {
+          "type": "memberships",
+          "id": "3ba43eea-28f4-4386-bc26-2476baeb8425"
+        }
       }
     }
   }
@@ -123,7 +103,7 @@ On successful login with the newly created session in the response body:
 - on login failure. I.e. failure to exchange the authorization code for a valid access token with ACM/IDM
 
 ###### 403 Bad Request
-- if the session cannot be attached to an exsting group (bestuurseenheid) based on the received organization code from ACM/IDM
+- if no valid user role can be found based on the received claim from ACM/IDM
 
 #### DELETE /sessions/current
 Log out the current user, i.e. remove the session associated with the current user's account.
@@ -148,26 +128,25 @@ Get the current session
   },
   "data": {
     "type": "sessions",
-    "id": "b178ba66-206e-4551-b41e-4a46983912c0",
-    "attributes": {}
-  },
-  "relationships": {
-    "account": {
-      "links": {
-        "related": "/accounts/f6419af0-c90f-465f-9333-e993c43e6cf2"
+    "id": "b178ba66-206e-4551-b41e-4a46983912c0"
+    "relationships": {
+      "account": {
+        "links": {
+          "related": "/accounts/8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        },
+        "data": {
+          "type": "accounts",
+          "id": "8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        }
       },
-      "data": {
-        "type": "accounts",
-        "id": "f6419af0-c90f-465f-9333-e993c43e6cf2"
-      }
-    },
-    "group": {
-      "links": {
-        "related": "/bestuurseenheden/f6419af0-c60f-465f-9333-e993c43e6ch5"
-      },
-      "data": {
-        "type": "bestuurseenheden",
-        "id": "f6419af0-c60f-465f-9333-e993c43e6ch5"
+      "membership": {
+        "links": {
+          "related": "/memberships/3ba43eea-28f4-4386-bc26-2476baeb8425"
+        },
+        "data": {
+          "type": "memberships",
+          "id": "3ba43eea-28f4-4386-bc26-2476baeb8425"
+        }
       }
     }
   }

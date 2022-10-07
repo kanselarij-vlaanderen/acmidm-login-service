@@ -1,15 +1,8 @@
-import { app } from 'mu';
+import { app, errorHandler } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
-import {
-  removeSession,
-  ensureUserAndAccount, insertNewSessionForAccount,
-  selectAccountBySession, selectCurrentSession
-} from './lib/session';
-import { selectUserGroup, USER_GRAPH_URI } from './lib/user';
+import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
 import request from 'request';
-
-const allowNoRoleClaim = process.env.MU_APPLICATION_AUTH_ALLOW_NO_ROLE_CLAIM === 'true';
 
 /**
  * Configuration validation on startup
@@ -19,11 +12,8 @@ const requiredEnvironmentVariables = [
   'MU_APPLICATION_AUTH_CLIENT_ID',
   'MU_APPLICATION_AUTH_CLIENT_SECRET',
   'MU_APPLICATION_AUTH_REDIRECT_URI',
-  'MU_APPLICATION_AUTH_DEFAULT_GROUP_URI'
 ];
-if (!allowNoRoleClaim) {
-  requiredEnvironmentVariables.push('MU_APPLICATION_AUTH_ROLE_CLAIM');
-}
+
 requiredEnvironmentVariables.forEach(key => {
   if (!process.env[key]) {
     console.log(`Environment variable ${key} must be configured`);
@@ -31,7 +21,6 @@ requiredEnvironmentVariables.forEach(key => {
   }
 });
 
-const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM;
 
 /**
  * Log the user in by creating a new session, i.e. attaching the user's account to a session.
@@ -47,7 +36,7 @@ const roleClaim = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM;
  * @return [201] On successful login containing the newly created session
  * @return [400] If the session header or authorization code is missing
  * @return [401] On login failure (unable to retrieve a valid access token)
- * @return [403] If no bestuurseenheid can be linked to the session
+ * @return [403] If no role can be found
 */
 app.post('/sessions', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -65,8 +54,9 @@ app.post('/sessions', async function (req, res, next) {
     try {
       tokenSet = await getAccessToken(authorizationCode);
     } catch (e) {
-      console.log(`Failed to retrieve access token for authorization code: ${e.message || e}`);
-      return res.status(401).end();
+      console.log(`Failed to retrieve access token for authorization code.`);
+      console.log(e);
+      return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
     }
 
     await removeSession(sessionUri);
@@ -81,38 +71,39 @@ app.post('/sessions', async function (req, res, next) {
       request.post({ url: process.env['LOG_SINK_URL'], body: tokenSet, json: true });
     }
 
-    const { accountUri, accountId } = await ensureUserAndAccount(claims, USER_GRAPH_URI);
-    let { groupUri, groupId, groupName } = await selectUserGroup(accountUri, claims, roleClaim, USER_GRAPH_URI);
-
-    if (!groupUri || !groupId) {
-      console.log(`User is not allowed to login. No user group found`);
+    const role = await selectUserRole(claims);
+    if (role) {
+      try {
+        const { accountUri, accountId, membershipUri, membershipId } = await ensureUserResources(claims, role);
+        const { sessionId } = await insertNewSession(sessionUri, accountUri, membershipUri);
+        return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
+          links: {
+            self: '/sessions/current'
+          },
+          data: {
+            type: 'sessions',
+            id: sessionId,
+            relationships: {
+              account: {
+                links: { related: `/accounts/${accountId}` },
+                data: { type: 'accounts', id: accountId }
+              },
+              membership: {
+                links: { related: `/memberships/${membershipId}` },
+                data: { type: 'memberships', id: membershipId }
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.log(`Failed to create required user resources in order to authenticate session.`);
+        console.log(e);
+        return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
+      }
+    } else {
+      console.log(`User is not allowed to login. No user role found for claims passed by ACM/IDM.`);
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
-
-    const { sessionId } = await insertNewSessionForAccount(accountUri, sessionUri, groupUri);
-
-    const groupData = { type: 'bestuurseenheden', id: groupId, name: groupName };
-
-    return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
-      links: {
-        self: '/sessions/current'
-      },
-      data: {
-        type: 'sessions',
-        id: sessionId,
-        attributes: {}
-      },
-      relationships: {
-        account: {
-          links: { related: `/accounts/${accountId}` },
-          data: { type: 'accounts', id: accountId }
-        },
-        group: {
-          links: { related: `/bestuurseenheden/${groupId}` },
-          data: groupData
-        }
-      }
-    });
   } catch (e) {
     return next(new Error(e.message));
   }
@@ -130,8 +121,8 @@ app.delete('/sessions/current', async function (req, res, next) {
     return error(res, 'Session header is missing');
   }
   try {
-    const { accountUri } = await selectAccountBySession(sessionUri, USER_GRAPH_URI);
-    if (!accountUri) {
+    const { accountUri, membershipUri } = await selectCurrentSession(sessionUri);
+    if (!accountUri || !membershipUri) {
       return error(res, 'Invalid session');
     }
 
@@ -156,12 +147,10 @@ app.get('/sessions/current', async function (req, res, next) {
   }
 
   try {
-    const { accountUri, accountId } = await selectAccountBySession(sessionUri, USER_GRAPH_URI);
-    if (!accountUri) {
+    const session = await selectCurrentSession(sessionUri);
+    if (!session.accountUri || !session.membershipUri) {
       return error(res, 'Invalid session');
     }
-
-    const { sessionId, groupId, groupName } = await selectCurrentSession(accountUri);
 
     return res.status(200).send({
       links: {
@@ -169,18 +158,17 @@ app.get('/sessions/current', async function (req, res, next) {
       },
       data: {
         type: 'sessions',
-        id: sessionId,
-        attributes: {}
-      },
-      provider: 'acmidm-oauth2',
-      relationships: {
-        account: {
-          links: { related: `/accounts/${accountId}` },
-          data: { type: 'accounts', id: accountId }
-        },
-        group: {
-          links: { related: `/bestuurseenheden/${groupId}` },
-          data: { type: 'bestuurseenheden', id: groupId, name: groupName }
+        id: session.id,
+        provider: 'acmidm-oauth2',
+        relationships: {
+          account: {
+            links: { related: `/accounts/${session.accountId}` },
+            data: { type: 'accounts', id: session.accountId }
+          },
+          membership: {
+            links: { related: `/memberships/${session.membershipId}` },
+            data: { type: 'memberships', id: session.membershipId }
+          }
         }
       }
     });
@@ -189,13 +177,4 @@ app.get('/sessions/current', async function (req, res, next) {
   }
 });
 
-/**
- * Error handler translating thrown Errors to 500 HTTP responses
-*/
-app.use(function (err, req, res, next) {
-  console.log(`Error: ${err.message}`);
-  res.status(500);
-  res.json({
-    errors: [ { title: err.message } ]
-  });
-});
+app.use(errorHandler);
