@@ -14,6 +14,9 @@ const AUTH_ORG_NAME_CLAIM = 'vo_orgnaam';
 const AUTH_FIRST_NAME_CLAIM = 'given_name';
 const AUTH_FAMILY_NAME_CLAIM = 'family_name';
 
+const ACCESS_ALLOWED_STATUS_URI = 'http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531';
+const ACCESS_BLOCKED_STATUS_URI = 'http://themis.vlaanderen.be/id/concept/ffd0d21a-3beb-44c4-b3ff-06fe9561282a';
+
 // Parse the role name from a claim coming from ACM/IDM
 // E.g. KaleidosGebruiker-Kaleidos_Overheidsorganisatie:OVO000617
 //      => Kaleidos_Overheidsorganisatie
@@ -36,5 +39,7 @@ export {
   AUTH_ORG_NAME_CLAIM,
   AUTH_FIRST_NAME_CLAIM,
   AUTH_FAMILY_NAME_CLAIM,
-  parseRoleFromClaim
+  ACCESS_ALLOWED_STATUS_URI,
+  ACCESS_BLOCKED_STATUS_URI,
+  parseRoleFromClaim,
 }
