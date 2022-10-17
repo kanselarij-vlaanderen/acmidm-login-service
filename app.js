@@ -3,6 +3,8 @@ import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
 import request from 'request';
+import { ACCESS_BLOCKED_STATUS_URI } from './config';
+import { blockMembership } from './lib/membership';
 import { BlockedError } from './lib/exception';
 
 /**
@@ -156,6 +158,22 @@ app.get('/sessions/current', async function (req, res, next) {
     const session = await selectCurrentSession(sessionUri);
     if (!session.accountUri || !session.membershipUri) {
       return error(res, 'Invalid session');
+    }
+
+    if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
+      res.status(403);
+      return error(res, 'This user is blocked');
+    }
+
+    if (session.organizationStatus === ACCESS_BLOCKED_STATUS_URI) {
+      await blockMembership(session.membershipUri);
+      res.status(403);
+      return error(res, 'This organization is blocked');
+    }
+
+    if (session.membershipStatus === ACCESS_BLOCKED_STATUS_URI) {
+      res.status(403);
+      return error(res, 'This membership is blocked');
     }
 
     return res.status(200).send({
