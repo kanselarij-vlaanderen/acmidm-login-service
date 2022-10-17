@@ -6,6 +6,7 @@ import request from 'request';
 import { ACCESS_BLOCKED_STATUS_URI } from './config';
 import { blockMembership } from './lib/membership';
 import { BlockedError } from './lib/exception';
+import { insertLoginActivity } from './lib/login-activity';
 
 /**
  * Configuration validation on startup
@@ -175,6 +176,8 @@ app.get('/sessions/current', async function (req, res, next) {
       res.status(403);
       return error(res, 'This membership is blocked');
     }
+
+    await insertLoginActivity(session.userUri);
 
     return res.status(200).send({
       links: {
