@@ -3,6 +3,7 @@ import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
 import request from 'request';
+import { BlockedError } from './lib/exception';
 
 /**
  * Configuration validation on startup
@@ -36,7 +37,7 @@ requiredEnvironmentVariables.forEach(key => {
  * @return [201] On successful login containing the newly created session
  * @return [400] If the session header or authorization code is missing
  * @return [401] On login failure (unable to retrieve a valid access token)
- * @return [403] If no role can be found
+ * @return [403] If no role can be found, or if the user is blocked in some way
 */
 app.post('/sessions', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -96,9 +97,14 @@ app.post('/sessions', async function (req, res, next) {
           }
         });
       } catch (e) {
-        console.log(`Failed to create required user resources in order to authenticate session.`);
-        console.log(e);
-        return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
+        if (e instanceof BlockedError) {
+          console.log(e);
+          return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
+        } else {
+          console.log(`Failed to create required user resources in order to authenticate session.`);
+          console.log(e);
+          return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
+        }
       }
     } else {
       console.log(`User is not allowed to login. No user role found for claims passed by ACM/IDM.`);
