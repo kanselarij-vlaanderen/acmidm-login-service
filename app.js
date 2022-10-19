@@ -160,6 +160,10 @@ app.get('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
+    // We only check the user and membership status here. If an organization is
+    // blocked that translates to the membership being blocked, which we handle.
+    // We don't check the organization status itself so that unblocking the
+    // membership actually has effect.
     if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
       res.status(403);
       return error(res, 'This user is blocked');
