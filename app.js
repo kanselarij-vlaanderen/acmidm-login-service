@@ -146,6 +146,7 @@ app.delete('/sessions/current', async function (req, res, next) {
  *
  * @return [200] The current session
  * @return [400] If the session header is missing or invalid
+ * @return [403] If the user or membership linked to this session are blocked
 */
 app.get('/sessions/current', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -162,11 +163,6 @@ app.get('/sessions/current', async function (req, res, next) {
     if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
       res.status(403);
       return error(res, 'This user is blocked');
-    }
-
-    if (session.organizationStatus === ACCESS_BLOCKED_STATUS_URI) {
-      res.status(403);
-      return error(res, 'This organization is blocked');
     }
 
     if (session.membershipStatus === ACCESS_BLOCKED_STATUS_URI) {
