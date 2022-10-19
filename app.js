@@ -4,7 +4,6 @@ import { getAccessToken } from './lib/openid';
 import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
 import request from 'request';
 import { ACCESS_BLOCKED_STATUS_URI } from './config';
-import { blockMembership } from './lib/membership';
 import { BlockedError } from './lib/exception';
 import { insertLoginActivity } from './lib/login-activity';
 
@@ -148,6 +147,7 @@ app.delete('/sessions/current', async function (req, res, next) {
  *
  * @return [200] The current session
  * @return [400] If the session header is missing or invalid
+ * @return [403] If the user or membership linked to this session are blocked
 */
 app.get('/sessions/current', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -161,15 +161,13 @@ app.get('/sessions/current', async function (req, res, next) {
       return error(res, 'Invalid session');
     }
 
+    // We only check the user and membership status here. If an organization is
+    // blocked that translates to the membership being blocked, which we handle.
+    // We don't check the organization status itself so that unblocking the
+    // membership actually has effect.
     if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
       res.status(403);
       return error(res, 'This user is blocked');
-    }
-
-    if (session.organizationStatus === ACCESS_BLOCKED_STATUS_URI) {
-      await blockMembership(session.membershipUri);
-      res.status(403);
-      return error(res, 'This organization is blocked');
     }
 
     if (session.membershipStatus === ACCESS_BLOCKED_STATUS_URI) {
