@@ -3,6 +3,8 @@ import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
 import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
 import request from 'request';
+import { ACCESS_BLOCKED_STATUS_URI } from './config';
+import { BlockedError } from './lib/exception';
 
 /**
  * Configuration validation on startup
@@ -36,7 +38,7 @@ requiredEnvironmentVariables.forEach(key => {
  * @return [201] On successful login containing the newly created session
  * @return [400] If the session header or authorization code is missing
  * @return [401] On login failure (unable to retrieve a valid access token)
- * @return [403] If no role can be found
+ * @return [403] If no role can be found, or if the user is blocked in some way
 */
 app.post('/sessions', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -96,9 +98,14 @@ app.post('/sessions', async function (req, res, next) {
           }
         });
       } catch (e) {
-        console.log(`Failed to create required user resources in order to authenticate session.`);
-        console.log(e);
-        return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
+        if (e instanceof BlockedError) {
+          console.log(e);
+          return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
+        } else {
+          console.log(`Failed to create required user resources in order to authenticate session.`);
+          console.log(e);
+          return res.header('mu-auth-allowed-groups', 'CLEAR').status(401).end();
+        }
       }
     } else {
       console.log(`User is not allowed to login. No user role found for claims passed by ACM/IDM.`);
@@ -139,6 +146,7 @@ app.delete('/sessions/current', async function (req, res, next) {
  *
  * @return [200] The current session
  * @return [400] If the session header is missing or invalid
+ * @return [403] If the user or membership linked to this session are blocked
 */
 app.get('/sessions/current', async function (req, res, next) {
   const sessionUri = getSessionIdHeader(req);
@@ -150,6 +158,20 @@ app.get('/sessions/current', async function (req, res, next) {
     const session = await selectCurrentSession(sessionUri);
     if (!session.accountUri || !session.membershipUri) {
       return error(res, 'Invalid session');
+    }
+
+    // We only check the user and membership status here. If an organization is
+    // blocked that translates to the membership being blocked, which we handle.
+    // We don't check the organization status itself so that unblocking the
+    // membership actually has effect.
+    if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
+      res.status(403);
+      return error(res, 'This user is blocked');
+    }
+
+    if (session.membershipStatus === ACCESS_BLOCKED_STATUS_URI) {
+      res.status(403);
+      return error(res, 'This membership is blocked');
     }
 
     return res.status(200).send({
