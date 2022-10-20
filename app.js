@@ -167,7 +167,7 @@ app.get('/sessions/current', async function (req, res, next) {
     // We don't check the organization status itself so that unblocking the
     // membership actually has effect.
     if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
-      console.log(`User of account <${session.accountUri}> is blocked`);
+      console.log(`User <${session.userUri}> is blocked`);
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
 
