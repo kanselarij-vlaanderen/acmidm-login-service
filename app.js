@@ -77,8 +77,9 @@ app.post('/sessions', async function (req, res, next) {
     const role = await selectUserRole(claims);
     if (role) {
       try {
-        const { accountUri, accountId, membershipUri, membershipId } = await ensureUserResources(claims, role);
+        const { accountUri, accountId, personUri, membershipUri, membershipId } = await ensureUserResources(claims, role);
         const { sessionId } = await insertNewSession(sessionUri, accountUri, membershipUri);
+        await insertLoginActivity(personUri);
         return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
           links: {
             self: '/sessions/current'
