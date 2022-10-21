@@ -1,6 +1,6 @@
 {
   "name": "acmidm-login-service",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Microservice to login using ACM/IDM with OpenId",
   "dependencies": {
     "@lblod/mu-auth-sudo": "^0.2.0",
