@@ -5,6 +5,7 @@ import { removeSession, ensureUserResources, insertNewSession, selectCurrentSess
 import request from 'request';
 import { ACCESS_BLOCKED_STATUS_URI } from './config';
 import { BlockedError } from './lib/exception';
+import { insertLoginActivity } from './lib/login-activity';
 
 /**
  * Configuration validation on startup
@@ -76,8 +77,9 @@ app.post('/sessions', async function (req, res, next) {
     const role = await selectUserRole(claims);
     if (role) {
       try {
-        const { accountUri, accountId, membershipUri, membershipId } = await ensureUserResources(claims, role);
+        const { accountUri, accountId, personUri, membershipUri, membershipId } = await ensureUserResources(claims, role);
         const { sessionId } = await insertNewSession(sessionUri, accountUri, membershipUri);
+        await insertLoginActivity(personUri);
         return res.header('mu-auth-allowed-groups', 'CLEAR').status(201).send({
           links: {
             self: '/sessions/current'
@@ -165,7 +167,7 @@ app.get('/sessions/current', async function (req, res, next) {
     // We don't check the organization status itself so that unblocking the
     // membership actually has effect.
     if (session.userStatus === ACCESS_BLOCKED_STATUS_URI) {
-      console.log(`User of account <${session.accountUri}> is blocked`);
+      console.log(`User <${session.userUri}> is blocked`);
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
 
@@ -173,6 +175,8 @@ app.get('/sessions/current', async function (req, res, next) {
       console.log(`User's membership <${session.membershipUri}> is blocked`);
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
+
+    await insertLoginActivity(session.userUri);
 
     return res.status(200).send({
       links: {
