@@ -104,6 +104,7 @@ On successful login with the newly created session in the response body:
 
 ###### 403 Bad Request
 - if no valid user role can be found based on the received claim from ACM/IDM
+- if the user or membership is blocked
 
 #### DELETE /sessions/current
 Log out the current user, i.e. remove the session associated with the current user's account.
@@ -155,3 +156,6 @@ Get the current session
 
 ###### 400 Bad Request
 If session header is missing or invalid. The header should be automatically set by the [identifier](https://github.com/mu-semtech/mu-identifier).
+
+###### 403 Bad Request
+- if the user or membership is blocked
