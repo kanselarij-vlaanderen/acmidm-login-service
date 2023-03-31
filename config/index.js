@@ -29,7 +29,7 @@ function parseRoleFromClaim(claim) {
 
 function parseEmailFromClaim(claim) {
   // input format example: "test@example.com:OVO001827"
-  return voEmail.split(':')[0];
+  return claim.split(':')[0];
 }
 
 export {
