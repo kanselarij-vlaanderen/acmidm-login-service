@@ -11,6 +11,7 @@ const AUTH_ACCOUNTID_CLAIM = process.env.MU_APPLICATION_AUTH_ACCOUNTID_CLAIM || 
 const AUTH_ROLE_CLAIM = process.env.MU_APPLICATION_AUTH_ROLE_CLAIM || 'dkb_kaleidos_rol_3d';
 const AUTH_ORG_CODE_CLAIM = 'vo_orgcode';
 const AUTH_ORG_NAME_CLAIM = 'vo_orgnaam';
+const AUTH_EMAIL_CLAIM = 'vo_email';
 const AUTH_FIRST_NAME_CLAIM = 'given_name';
 const AUTH_FAMILY_NAME_CLAIM = 'family_name';
 
@@ -26,6 +27,11 @@ function parseRoleFromClaim(claim) {
   return match ? match[1] : null;
 }
 
+function parseEmailFromClaim(claim) {
+  // input format example: "test@example.com:OVO001827"
+  return claim.split(':')[0];
+}
+
 export {
   RESOURCE_BASE_URI,
   USERS_GRAPH,
@@ -37,9 +43,11 @@ export {
   AUTH_ROLE_CLAIM,
   AUTH_ORG_CODE_CLAIM,
   AUTH_ORG_NAME_CLAIM,
+  AUTH_EMAIL_CLAIM,
   AUTH_FIRST_NAME_CLAIM,
   AUTH_FAMILY_NAME_CLAIM,
   ACCESS_ALLOWED_STATUS_URI,
   ACCESS_BLOCKED_STATUS_URI,
   parseRoleFromClaim,
+  parseEmailFromClaim,
 }
