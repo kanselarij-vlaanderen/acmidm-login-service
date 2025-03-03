@@ -1,7 +1,7 @@
 import { app, errorHandler } from 'mu';
 import { getSessionIdHeader, error } from './utils';
 import { getAccessToken } from './lib/openid';
-import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole } from './lib/session';
+import { removeSession, ensureUserResources, insertNewSession, selectCurrentSession, selectUserRole, sessionIsAuthorized, removeAllSessionsByUserId, removeAllSessionsBeforeDatetime, removeAllSessions } from './lib/session';
 import request from 'request';
 import { ACCESS_BLOCKED_STATUS_URI } from './config';
 import { BlockedError } from './lib/exception';
@@ -201,6 +201,40 @@ app.get('/sessions/current', async function (req, res, next) {
   } catch (e) {
     return next(new Error(e.message));
   }
+});
+
+/**
+ * Delete sessions based on a number of parameters
+ * The accepted parameters are: 
+ * - ?uuid=<id>: delete all sessions belonging to the user with the given UUID
+ * - ?beforeDatetime=ISO-timestamp: delete all sessions before the given timestamp
+ * If no parameters are supplied, all sessions will be cleared.
+ */
+app.delete('/sessions', async function (req, res, next) {
+  const sessionUri = req.headers['mu-session-id'];
+  const { uuid, beforeDatetime } = req.query;
+
+  if (uuid && beforeDatetime) {
+    return next({ message: 'Setting both the uuid and beforeDatetime parameters in the same call is not supported', status: 400 });
+  }
+
+  const date = new Date(beforeDatetime);
+  if (Number.isNaN(date.valueOf())) {
+    return next({ message: `beforeDatetime should be a correctly formatted ISO timestamp, you provided: "${beforeDatetime}"`, status: 400 });
+  }
+
+  if (!(await sessionIsAuthorized(sessionUri))) {
+    return next({ message: 'You do not have the correct role to perform this operation', status: 401 });
+  }
+
+  if (uuid) {
+    await removeAllSessionsByUserId(uuid);
+  } else if (beforeDatetime) {
+    await removeAllSessionsBeforeDatetime(date);
+  } else {
+    await removeAllSessions();
+  }
+  return res.status(204).end();
 });
 
 app.use(errorHandler);
