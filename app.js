@@ -205,7 +205,7 @@ app.get('/sessions/current', async function (req, res, next) {
 
 /**
  * Delete sessions based on a number of parameters
- * The accepted parameters are: 
+ * The accepted parameters are:
  * - ?uuid=<id>: delete all sessions belonging to the user with the given UUID
  * - ?beforeDatetime=ISO-timestamp: delete all sessions before the given timestamp
  * If no parameters are supplied, all sessions will be cleared.
@@ -219,7 +219,7 @@ app.delete('/sessions', async function (req, res, next) {
   }
 
   const date = new Date(beforeDatetime);
-  if (Number.isNaN(date.valueOf())) {
+  if (beforeDatetime && Number.isNaN(date.valueOf())) {
     return next({ message: `beforeDatetime should be a correctly formatted ISO timestamp, you provided: "${beforeDatetime}"`, status: 400 });
   }
 
