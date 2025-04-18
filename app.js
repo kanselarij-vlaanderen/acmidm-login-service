@@ -175,8 +175,10 @@ app.get('/sessions/current', async function (req, res, next) {
       console.log(`User's membership <${session.membershipUri}> is blocked`);
       return res.header('mu-auth-allowed-groups', 'CLEAR').status(403).end();
     }
-
-    await insertLoginActivity(session.userUri);
+    
+    if (req.query?.skipLoginActivity !== 'true') {
+      await insertLoginActivity(session.userUri);
+    }
 
     return res.status(200).send({
       links: {
