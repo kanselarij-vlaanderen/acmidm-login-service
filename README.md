@@ -40,6 +40,7 @@ The following enviroment variables can optionally be configured:
 * `REQUEST_TIMEOUT` [int]: Timeout in ms of OpenID HTTP requests (default `25000`)
 * `REQUEST_RETRIES` [int]: Number of times to retry OpenID HTTP requests (default `2`)
 * `MU_APPLICATION_AUTH_ROLE_CLAIM` [string]: Key of the claim that contains the user's roles (default `dkb_kaleidos_rol_3d`)
+* `MU_APPLICATION_AUTH_ROLE_CLAIM_REGEX` [string]: Regex to retrieve the role part from the user's role claim (default `^KaleidosGebruiker-(Kaleidos_[\d\w]*):`)
 * `MU_APPLICATION_AUTH_USERID_CLAIM` [string]: Key of the claim that contains the user's ientifier (default `vo_id`)
 * `MU_APPLICATION_AUTH_ACCOUNTID_CLAIM` [string]: Key of the claim that contains the account's identifier (default `sub`)
 * `DEBUG_LOG_TOKENSETS`: When set, received tokenSet information is logged to the console.

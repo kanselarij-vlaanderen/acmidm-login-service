@@ -21,7 +21,13 @@ const ACCESS_BLOCKED_STATUS_URI = 'http://themis.vlaanderen.be/id/concept/ffd0d2
 // Parse the role name from a claim coming from ACM/IDM
 // E.g. KaleidosGebruiker-Kaleidos_Overheidsorganisatie:OVO000617
 //      => Kaleidos_Overheidsorganisatie
-const ROLE_CLAIM_REGEX = /^KaleidosGebruiker-(Kaleidos_[\d\w]*):/;
+let ROLE_CLAIM_REGEX
+if (process.env.MU_APPLICATION_AUTH_ROLE_CLAIM_REGEX) {
+  ROLE_CLAIM_REGEX = new RegExp(process.env.MU_APPLICATION_AUTH_ROLE_CLAIM_REGEX);
+} else {
+  ROLE_CLAIM_REGEX = /^KaleidosGebruiker-(Kaleidos_[\d\w]*):/
+}
+
 function parseRoleFromClaim(claim) {
   const match = claim?.match(ROLE_CLAIM_REGEX);
   return match ? match[1] : null;
