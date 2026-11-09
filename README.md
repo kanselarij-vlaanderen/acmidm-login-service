@@ -15,6 +15,7 @@ services:
       MU_APPLICATION_AUTH_CLIENT_ID: "my-client-id"
       MU_APPLICATION_AUTH_REDIRECT_URI: "https://VLIVIA-dev.vlaanderen.be/authorization/callback"
       MU_APPLICATION_AUTH_CLIENT_SECRET: "THIS IS OUR SECRET"
+      ALLOW_MU_AUTH_SUDO: "true"
 ```
 
 Add rules to the `dispatcher.ex` to dispatch requests to the login service. E.g. 
